@@ -1,0 +1,22 @@
+{
+    "files.associations": {
+        "cdev.h": "c",
+        "ap3216.h": "c",
+        "i2c.h": "c",
+        "mod_devicetable.h": "c",
+        "device.h": "c",
+        "sched.h": "c",
+        "mutex.h": "c",
+        "of.h": "c",
+        "swab.h": "c",
+        "hdreg.h": "c",
+        "blkdev.h": "c",
+        "genhd.h": "c",
+        "fs.h": "c",
+        "major.h": "c",
+        "buffer_head.h": "c",
+        "elevator.h": "c",
+        "bio.h": "c",
+        "init.h": "c"
+    }
+}
