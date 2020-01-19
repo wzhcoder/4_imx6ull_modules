@@ -24,8 +24,6 @@ mount /dev/vmem_diska /mnt */
 #include <linux/blkdev.h>
 #include <linux/bio.h>
 
-static int vmem_disk_major;
-module_param(vmem_disk_major, int, 0);
 
 #define HARDSECT_SIZE 512	//扇区的大小设为512字节
 #define NSECTORS 1024  		//设置1024个扇区
@@ -35,8 +33,10 @@ enum {
 	VMEMD_QUEUE  = 0, /* Use request_queue */
 	VMEMD_NOQUEUE = 1, /* Use make_request */
 };
+
+static int vmem_disk_major;
 static int request_mode = VMEMD_QUEUE;
-module_param(request_mode, int, 0);
+
 
 
 #define VMEM_DISK_MINORS    16
@@ -93,7 +93,9 @@ static int vmem_disk_xfer_bio(struct vmem_disk_dev *dev, struct bio *bio)
 		char *buffer = __bio_kmap_atomic(bio, iter);
 		vmem_disk_transfer(dev, sector, bio_cur_bytes(bio) >> 9,
 			buffer, bio_data_dir(bio) == WRITE);
+			/*  bio_data_dir(bio) 返回IO操作的方向，是读还是写*/
 		sector += bio_cur_bytes(bio) >> 9;
+		/* bio_cur_bytes(bio) 返回当前段中需要参数的字节数 */
 		__bio_kunmap_atomic(buffer);
 	}
 	return 0;
@@ -117,10 +119,10 @@ static void vmem_disk_request(struct request_queue *q)
 			continue;
 		}
 
-		blk_start_request(req);
-		__rq_for_each_bio(bio, req)
+		blk_start_request(req);/* 开启请求 */
+		__rq_for_each_bio(bio, req)		/* 遍历每一个bio */
 			vmem_disk_xfer_bio(dev, bio);
-		__blk_end_request_all(req, 0);
+		__blk_end_request_all(req, 0);/* 关闭请求 */
 	}
 }
 
@@ -143,10 +145,10 @@ static int vmem_disk_getgeo(struct block_device *bdev, struct hd_geometry *geo)
 	struct vmem_disk_dev *dev = bdev->bd_disk->private_data;
 
 	size = dev->size*(HARDSECT_SIZE/KERNEL_SECTOR_SIZE);
-	geo->cylinders = (size & ~0x3f) >> 6; //磁柱的个数
-	geo->heads = 4;						 //磁头的个数
+	geo->cylinders = (size & ~0x3f) >> 6; //磁柱（磁道）的个数
+	geo->heads = 4;						 //磁头的个数，即盘面数
 	geo->sectors = 16;					// 扇区的个数
-	geo->start = 4;						//起始扇区
+	geo->start = 4;						//从哪个磁道开始
 					//总容量为 cylinders x heads x sectors x 512  （字节）
 
 	return 0;
@@ -166,7 +168,7 @@ static void setup_device(struct vmem_disk_dev *dev, int which)
 	/* 把dev当前位置后面的 sizeof (struct vmem_disk_dev) 个字节全部赋值为0 
 	这种方法速度快*/
 	dev->size = NSECTORS*HARDSECT_SIZE; //设置一个块设备的总的大小，单位字节
-	dev->data = vmalloc(dev->size);	//设置
+	dev->data = vmalloc(dev->size);	//一个虚拟块设备在ram中的起始地址
 	if (dev->data == NULL) {
 		printk (KERN_NOTICE "vmalloc failure.\n");
 		return;
@@ -194,9 +196,10 @@ static void setup_device(struct vmem_disk_dev *dev, int which)
 		break;
 	}
 	blk_queue_logical_block_size(dev->queue, HARDSECT_SIZE);
+	/* 告知内核 块设备扇区的大小 */
 	dev->queue->queuedata = dev;
 
-	dev->gd = alloc_disk(VMEM_DISK_MINORS);
+	dev->gd = alloc_disk(VMEM_DISK_MINORS);/* 分配块设备的分区数量 */
 	if (!dev->gd) {
 		printk (KERN_NOTICE "alloc_disk failure\n");
 		goto out_vfree;
@@ -208,7 +211,9 @@ static void setup_device(struct vmem_disk_dev *dev, int which)
 	dev->gd->private_data = dev;
 	snprintf (dev->gd->disk_name, 32, "vmem_disk%c", which + 'a');
 	set_capacity(dev->gd, NSECTORS*(HARDSECT_SIZE/KERNEL_SECTOR_SIZE));
-	add_disk(dev->gd);
+	/* 设置磁盘的容量，以扇区为单位，扇区分为物理扇区（512的整数倍个字节）
+		和内核扇区（512字节）， */
+	add_disk(dev->gd);/* 激活块设备 */
 	return;
 
 out_vfree:
@@ -255,7 +260,7 @@ static void vmem_disk_exit(void)
 
 		if (dev->gd) {
 			del_gendisk(dev->gd);
-			put_disk(dev->gd);
+			put_disk(dev->gd); /* 删除块设备的引用计数 */
 		}
 		if (dev->queue) {
 			if (request_mode == VMEMD_NOQUEUE)
@@ -267,7 +272,7 @@ static void vmem_disk_exit(void)
 			vfree(dev->data);
 	}
 	unregister_blkdev(vmem_disk_major, "vmem_disk");
-	kfree(devices);
+	kfree(devices);/* 释放创造的虚拟内存块 */
 }
 
 

@@ -1,0 +1,1 @@
+cmd_/home/wzh/wzh_learning/my_modules/1.vmem_disk/vmem_disk.ko := arm-linux-gnueabihf-ld -EL -r  -T ./scripts/module-common.lds --build-id  -o /home/wzh/wzh_learning/my_modules/1.vmem_disk/vmem_disk.ko /home/wzh/wzh_learning/my_modules/1.vmem_disk/vmem_disk.o /home/wzh/wzh_learning/my_modules/1.vmem_disk/vmem_disk.mod.o

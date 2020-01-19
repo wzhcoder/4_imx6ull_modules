@@ -1,0 +1,1 @@
+imx6ull alpha开发板 SD卡（tf卡）驱动  源码在内核目录下 /drivers/mmc/card/sdio_uart.c

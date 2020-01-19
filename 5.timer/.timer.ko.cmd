@@ -1,0 +1,1 @@
+cmd_/home/wzh/wzh_learning/my_modules/5.timer/timer.ko := arm-linux-gnueabihf-ld -EL -r  -T ./scripts/module-common.lds --build-id  -o /home/wzh/wzh_learning/my_modules/5.timer/timer.ko /home/wzh/wzh_learning/my_modules/5.timer/timer.o /home/wzh/wzh_learning/my_modules/5.timer/timer.mod.o
